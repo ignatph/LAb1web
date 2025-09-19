@@ -4,9 +4,9 @@ let points = [];
 document.addEventListener('DOMContentLoaded', function() {
     drawGraph(currentR);
 
-    // Инициализация кнопок для X
+
     const xButtons = document.querySelectorAll('#x-buttons button');
-    xButtons[5].classList.add('selected'); // Выбираем 0 по умолчанию
+    xButtons[5].classList.add('selected');
     document.getElementById('x-value').value = '0';
 
     xButtons.forEach(button => {
@@ -17,9 +17,9 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 
-    // Инициализация чекбоксов для R
+
     const rCheckboxes = document.querySelectorAll('input[name="r"]');
-    rCheckboxes[2].checked = true; // Выбираем 2 по умолчанию
+    rCheckboxes[2].checked = true;
 
     rCheckboxes.forEach(checkbox => {
         checkbox.addEventListener('change', function() {
@@ -33,13 +33,12 @@ document.addEventListener('DOMContentLoaded', function() {
                     addPointToGraph(point.x, point.y, point.r, point.result);
                 });
             } else {
-                // Гарантируем, что хотя бы один чекбокс всегда выбран
                 this.checked = true;
             }
         });
     });
 
-    // Обработка отправки формы
+
     document.getElementById('input-form').addEventListener('submit', function(event) {
         event.preventDefault();
         submitForm();
@@ -51,7 +50,7 @@ function submitForm() {
     const xValue = parseFloat(document.getElementById('x-value').value);
     const yValue = parseFloat(document.getElementById('y').value.replace(',', '.'));
 
-    // Получаем выбранное значение R
+
     const rCheckbox = document.querySelector('input[name="r"]:checked');
     if (!rCheckbox) {
         alert("Пожалуйста, выберите значение R");
@@ -98,7 +97,7 @@ function submitForm() {
         });
 }
 
-// Добавление результата в таблицу
+
 function addResultToTable(data) {
     const resultsTable = document.querySelector('#results-table tbody');
 
@@ -119,7 +118,7 @@ function addResultToTable(data) {
     resultsTable.appendChild(newRow);
 }
 
-// Рисование графика
+
 function drawGraph(r) {
     const canvas = document.getElementById('coordinatePlane');
     const ctx = canvas.getContext('2d');
@@ -149,19 +148,19 @@ function drawGraph(r) {
     ctx.globalAlpha = 0.5;
     ctx.fillStyle = "blue";
 
-    // 1. Первая четверть: четверть круга
+    // 1
     ctx.beginPath();
     ctx.arc(centerX, centerY, scale * r, -Math.PI/2, 0);
     ctx.lineTo(centerX, centerY);
     ctx.closePath();
     ctx.fill();
 
-    // 2. Вторая четверть: квадрат
+    // 2
     ctx.beginPath();
     ctx.rect(centerX - scale * r, centerY - scale * r, scale * r, scale * r);
     ctx.fill();
 
-    // 3. Четвертая четверть: треугольник
+    // 3
     ctx.beginPath();
     ctx.moveTo(centerX, centerY);
     ctx.lineTo(centerX - scale * r/2, centerY);
@@ -185,17 +184,17 @@ function drawGraph(r) {
     ctx.stroke();
     ctx.lineWidth = 1;
 
-    // Подписываем оси
+
     ctx.fillStyle = 'black';
     ctx.font = '12px Arial';
 
-    // Отметки на оси X
+
     getXserif(centerX - scale * r / 2, "R/2");
     getXserif(centerX + scale * r / 2, "R/2");
     getXserif(centerX + scale * r, "R");
     getXserif(centerX - scale * r, "R");
 
-    // Отметки на оси Y
+
     getYserif(centerY - scale * r / 2, "R/2");
     getYserif(centerY + scale * r / 2, "R/2");
     getYserif(centerY - scale * r, "R");
@@ -206,7 +205,7 @@ function drawGraph(r) {
     ctx.fillText('Y', centerX + 10, 10);
 }
 
-// Добавление точки на график
+
 function addPointToGraph(x, y, r, isHit) {
     if (Math.abs(r - currentR) > 0.001) {
         return;

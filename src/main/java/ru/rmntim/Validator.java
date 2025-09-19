@@ -1,8 +1,8 @@
 package ru.rmntim;
 class Validator {
-    // Допустимые значения X
+
     private static final float[] VALID_X = {-5, -4, -3, -2, -1, 0, 1, 2, 3};
-    // Допустимые значения R
+
     private static final float[] VALID_R = {1, 1.5f, 2, 2.5f, 3};
 
     public static boolean validateX(float x) {

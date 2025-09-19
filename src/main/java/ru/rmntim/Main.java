@@ -10,7 +10,7 @@ import java.io.IOException;
 public class Main {
     public static void main(String[] args) {
         FCGIInterface fcgiInterface = new FCGIInterface();
-        System.err.println("FastCGI сервер запущен и ожидает запросов...");
+        System.err.println("сервер запущен");
 
         while (fcgiInterface.FCGIaccept() >= 0) {
             try {
@@ -22,7 +22,6 @@ public class Main {
                     continue;
                 }
 
-                // Обработка только POST запросов на /check
                 if ("/fcgi-bin/java-fcgi/check".equals(uri)) {
                     if ("POST".equals(method)) {
                         handlePostCheck();
@@ -46,7 +45,6 @@ public class Main {
             return;
         }
 
-        // Парсинг JSON
         Map<String, String> params;
         try {
             params = parseJsonBody(body);
@@ -58,36 +56,33 @@ public class Main {
         processCheckRequest(params);
     }
 
-    // Основная обработка запроса проверки попадания
     private static void processCheckRequest(Map<String, String> params) {
         long startTime = System.nanoTime();
 
-        // Проверяем наличие всех необходимых параметров
+
         if (!params.containsKey("x") || !params.containsKey("y") || !params.containsKey("r")) {
             sendError("Отсутствуют необходимые параметры: x, y, r");
             return;
         }
 
         try {
-            // Извлекаем и проверяем параметры
+
             float x = parseAndValidate(params.get("x"), "x", -5, 3);
             float y = parseAndValidate(params.get("y"), "y", -3, 5);
             float r = parseAndValidate(params.get("r"), "r", 1, 3);
 
-            // Проверяем попадание
             boolean isHit = Checker.isHit(x, y, r);
 
-            // Формируем результат
-            long workTime = (System.nanoTime() - startTime) / 1000; // микросекунды
+            long workTime = (System.nanoTime() - startTime) / 1000;
             String currentTime = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
 
             String resultJson = String.format(
-                    Locale.US, // Добавьте явное указание локали
+                    Locale.US,
                     "{\"x\":%.3f,\"y\":%.3f,\"r\":%.3f,\"result\":%s,\"workTime\":%d,\"currentTime\":\"%s\"}",
                     x, y, r, isHit, workTime, currentTime
             );
 
-            // Отправляем ответ
+
             sendResponse(resultJson);
 
         } catch (ValidationException e) {
@@ -98,15 +93,14 @@ public class Main {
         }
     }
 
-    // Парсинг и валидация параметра
     private static float parseAndValidate(String value, String paramName, float min, float max)
             throws ValidationException {
         try {
-            // Заменяем запятую на точку для корректного парсинга
+
             String normalizedValue = value.replace(',', '.');
             float number = Float.parseFloat(normalizedValue);
 
-            // Проверяем допустимость значения
+
             if (paramName.equals("x")) {
                 if (!Validator.validateX(number)) {
                     throw new ValidationException("Недопустимое значение X. Допустимые значения: -5, -4, -3, -2, -1, 0, 1, 2, 3");
@@ -127,7 +121,6 @@ public class Main {
         }
     }
 
-    // Чтение тела запроса
     private static String readRequestBody() throws IOException {
         String contentLengthStr = FCGIInterface.request.params.getProperty("CONTENT_LENGTH");
         if (contentLengthStr == null) {
@@ -149,11 +142,11 @@ public class Main {
         return new String(buffer, StandardCharsets.UTF_8);
     }
 
-    // Парсинг JSON тела запроса
+
     private static Map<String, String> parseJsonBody(String body) {
         Map<String, String> params = new HashMap<>();
 
-        // Упрощенный парсинг JSON
+
         String cleanedBody = body.replaceAll("[{}\"]", "").trim();
         String[] pairs = cleanedBody.split(",");
 
@@ -167,17 +160,17 @@ public class Main {
         return params;
     }
 
-    // Отправка успешного ответа
+
     private static void sendResponse(String content) {
         String response = String.format(
                 "Content-type: application/json\r\n\r\n%s", content
         );
-        // Добавьте в sendResponse
-        System.err.println("Sending JSON: " + content); // Для отладки
+
+        System.err.println("JSON: " + content); // Для отладки
         System.out.println(response);
     }
 
-    // Отправка ошибки
+
     private static void sendError(String message) {
         String errorJson = String.format("{\"error\":\"%s\"}", message);
         String response = String.format(
