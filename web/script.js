@@ -1,19 +1,41 @@
 let currentR = 2;
 let points = [];
 
-// Инициализация при загрузке страницы
 document.addEventListener('DOMContentLoaded', function() {
     drawGraph(currentR);
 
-    // Обработка изменения радиуса R
-    document.querySelectorAll('input[name="r"]').forEach(radio => {
-        radio.addEventListener('change', function() {
-            currentR = parseFloat(this.value);
-            drawGraph(currentR);
-            // Перерисовываем все точки
-            points.forEach(point => {
-                addPointToGraph(point.x, point.y, point.r, point.result);
-            });
+    // Инициализация кнопок для X
+    const xButtons = document.querySelectorAll('#x-buttons button');
+    xButtons[5].classList.add('selected'); // Выбираем 0 по умолчанию
+    document.getElementById('x-value').value = '0';
+
+    xButtons.forEach(button => {
+        button.addEventListener('click', function() {
+            xButtons.forEach(btn => btn.classList.remove('selected'));
+            this.classList.add('selected');
+            document.getElementById('x-value').value = this.value;
+        });
+    });
+
+    // Инициализация чекбоксов для R
+    const rCheckboxes = document.querySelectorAll('input[name="r"]');
+    rCheckboxes[2].checked = true; // Выбираем 2 по умолчанию
+
+    rCheckboxes.forEach(checkbox => {
+        checkbox.addEventListener('change', function() {
+            if (this.checked) {
+                rCheckboxes.forEach(cb => {
+                    if (cb !== this) cb.checked = false;
+                });
+                currentR = parseFloat(this.value);
+                drawGraph(currentR);
+                points.forEach(point => {
+                    addPointToGraph(point.x, point.y, point.r, point.result);
+                });
+            } else {
+                // Гарантируем, что хотя бы один чекбокс всегда выбран
+                this.checked = true;
+            }
         });
     });
 
@@ -24,27 +46,30 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 });
 
-// Функция отправки формы
+// Отправка формы
 function submitForm() {
-    // Получаем значения из формы
-    const xValue = parseFloat(document.querySelector('input[name="x"]:checked').value);
+    const xValue = parseFloat(document.getElementById('x-value').value);
     const yValue = parseFloat(document.getElementById('y').value.replace(',', '.'));
-    const rValue = parseFloat(document.querySelector('input[name="r"]:checked').value);
 
-    // Проверяем корректность ввода Y
+    // Получаем выбранное значение R
+    const rCheckbox = document.querySelector('input[name="r"]:checked');
+    if (!rCheckbox) {
+        alert("Пожалуйста, выберите значение R");
+        return;
+    }
+    const rValue = parseFloat(rCheckbox.value);
+
     if (isNaN(yValue) || yValue <= -3 || yValue >= 5) {
         alert("Пожалуйста, введите корректное значение Y в диапазоне (-3, 5)");
         return;
     }
 
-    // Создаем объект с данными
     const formData = {
         x: xValue,
         y: yValue,
         r: rValue
     };
 
-    // Отправляем данные на сервер
     fetch('/fcgi-bin/java-fcgi/check', {
         method: 'POST',
         headers: {
@@ -52,33 +77,31 @@ function submitForm() {
         },
         body: JSON.stringify(formData)
     })
-    .then(response => {
-        if (!response.ok) {
-            throw new Error('Ошибка сети: ' + response.status);
-        }
-        return response.json();
-    })
-    .then(data => {
-        if (data.error) {
-            alert("Ошибка: " + data.error);
-        } else {
-            // Добавляем новую точку в локальную историю
-            points.push(data);
-            addResultToTable(data);
-            addPointToGraph(data.x, data.y, data.r, data.result);
-        }
-    })
-    .catch(error => {
-        console.error('Ошибка:', error);
-        alert("Произошла ошибка при отправке данных. Проверьте консоль для подробностей.");
-    });
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Ошибка сети: ' + response.status);
+            }
+            return response.json();
+        })
+        .then(data => {
+            if (data.error) {
+                alert("Ошибка: " + data.error);
+            } else {
+                points.push(data);
+                addResultToTable(data);
+                addPointToGraph(data.x, data.y, data.r, data.result);
+            }
+        })
+        .catch(error => {
+            console.error('Ошибка:', error);
+            alert("Произошла ошибка при отправке данных. Проверьте консоль для подробностей.");
+        });
 }
 
-// Функция для добавления результата в таблицу
+// Добавление результата в таблицу
 function addResultToTable(data) {
     const resultsTable = document.querySelector('#results-table tbody');
 
-    // Убираем заглушку, если она есть
     if (resultsTable.querySelector('td[colspan]')) {
         resultsTable.innerHTML = '';
     }
@@ -96,19 +119,17 @@ function addResultToTable(data) {
     resultsTable.appendChild(newRow);
 }
 
-// Функция для рисования графика
+// Рисование графика
 function drawGraph(r) {
     const canvas = document.getElementById('coordinatePlane');
     const ctx = canvas.getContext('2d');
 
-    // Очищаем canvas
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
     const scale = 40;
     const centerX = canvas.width / 2;
     const centerY = canvas.height / 2;
 
-    // Функции для рисования отметок на осях
     function getXserif(x, text) {
         ctx.beginPath();
         ctx.moveTo(x, centerY - 5);
@@ -125,23 +146,22 @@ function drawGraph(r) {
         ctx.fillText(text, centerX+8, y);
     }
 
-    // Рисуем область попадания
     ctx.globalAlpha = 0.5;
     ctx.fillStyle = "blue";
 
-    // 1. Первая четверть: четверть круга с центром в (0,0) и радиусом R
+    // 1. Первая четверть: четверть круга
     ctx.beginPath();
     ctx.arc(centerX, centerY, scale * r, -Math.PI/2, 0);
     ctx.lineTo(centerX, centerY);
     ctx.closePath();
     ctx.fill();
 
-    // 2. Вторая четверть: квадрат со стороной R
+    // 2. Вторая четверть: квадрат
     ctx.beginPath();
     ctx.rect(centerX - scale * r, centerY - scale * r, scale * r, scale * r);
     ctx.fill();
 
-    // 3. Третья четверть: треугольник с вершинами (0,0), (-R/2,0), (0,-R/2)
+    // 3. Четвертая четверть: треугольник
     ctx.beginPath();
     ctx.moveTo(centerX, centerY);
     ctx.lineTo(centerX - scale * r/2, centerY);
@@ -186,9 +206,8 @@ function drawGraph(r) {
     ctx.fillText('Y', centerX + 10, 10);
 }
 
-// Функция для добавления точки на график
+// Добавление точки на график
 function addPointToGraph(x, y, r, isHit) {
-    // Если точка не для текущего R, не отображаем её
     if (Math.abs(r - currentR) > 0.001) {
         return;
     }
@@ -200,11 +219,9 @@ function addPointToGraph(x, y, r, isHit) {
     const centerX = canvas.width / 2;
     const centerY = canvas.height / 2;
 
-    // Преобразуем координаты в пиксели
     const pixelX = centerX + x * scale;
     const pixelY = centerY - y * scale;
 
-    // Рисуем точку
     ctx.beginPath();
     ctx.arc(pixelX, pixelY, 5, 0, 2 * Math.PI);
     ctx.fillStyle = isHit ? 'green' : 'red';
