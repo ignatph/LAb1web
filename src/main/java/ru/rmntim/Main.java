@@ -18,7 +18,7 @@ public class Main {
                 String uri = FCGIInterface.request.params.getProperty("REQUEST_URI");
 
                 if (method == null || uri == null) {
-                    sendError("Неверный запрос");
+                    sendError("tеверный запрос");
                     continue;
                 }
 
@@ -96,10 +96,8 @@ public class Main {
     private static float parseAndValidate(String value, String paramName, float min, float max)
             throws ValidationException {
         try {
-
             String normalizedValue = value.replace(',', '.');
             float number = Float.parseFloat(normalizedValue);
-
 
             if (paramName.equals("x")) {
                 if (!Validator.validateX(number)) {
@@ -107,7 +105,7 @@ public class Main {
                 }
             } else if (paramName.equals("y")) {
                 if (!Validator.validateY(number)) {
-                    throw new ValidationException("Y должен быть в диапазоне (-3, 5)");
+                    throw new ValidationException("Y должен быть в диапазоне от -3 до 5 включительно");
                 }
             } else if (paramName.equals("r")) {
                 if (!Validator.validateR(number)) {
@@ -120,7 +118,6 @@ public class Main {
             throw new ValidationException("Параметр " + paramName + " должен быть числом");
         }
     }
-
     private static String readRequestBody() throws IOException {
         String contentLengthStr = FCGIInterface.request.params.getProperty("CONTENT_LENGTH");
         if (contentLengthStr == null) {

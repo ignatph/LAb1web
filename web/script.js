@@ -1,7 +1,84 @@
 let currentR = 2;
 let points = [];
+const STORAGE_KEY = 'savedPoints';
+
+document.getElementById('y').addEventListener('input', function(e) {
+    let value = e.target.value;
+
+
+    value = value.replace(/[^\d.,-]/g, '');
+
+    value = value.replace(',', '.');
+
+
+    if (value.indexOf('-') > 0) {
+        value = value.replace('-', '');
+    }
+
+
+    if ((value.match(/-/g) || []).length > 1) {
+        value = value.replace(/-/g, '');
+        if (value.length > 0) value = '-' + value;
+    }
+
+
+    const dotCount = (value.match(/\./g) || []).length;
+    if (dotCount > 1) {
+        const parts = value.split('.');
+        value = parts[0] + '.' + parts.slice(1).join('');
+    }
+
+
+    if (value.includes('.')) {
+        const parts = value.split('.');
+        if (parts[1] && parts[1].length > 3) {
+            value = parts[0] + '.' + parts[1].substring(0, 3);
+        }
+    }
+
+    e.target.value = value;
+});
+function showError(message) {
+    let errorElement = document.getElementById('y-error');
+    if (!errorElement) {
+        errorElement = document.createElement('div');
+        errorElement.id = 'y-error';
+        errorElement.className = 'error';
+        document.getElementById('y').parentNode.appendChild(errorElement);
+    }
+    errorElement.textContent = message;
+    document.getElementById('y').classList.add('error-border');
+}
+
+function hideError() {
+    const errorElement = document.getElementById('y-error');
+    if (errorElement) {
+        errorElement.remove();
+    }
+    document.getElementById('y').classList.remove('error-border');
+}
+
+document.getElementById('y').addEventListener('blur', function(e) {
+    const value = e.target.value;
+    const numberValue = parseFloat(value.replace(',', '.'));
+
+    if (value === '' || isNaN(numberValue)) {
+        e.target.setCustomValidity('Пожалуйста, введите число');
+        showError('Пожалуйста, введите число');
+    } else if (numberValue < -3 || numberValue > 5) {
+        e.target.setCustomValidity('Число должно быть от -3 до 5');
+        showError('Число должно быть от -3 до 5');
+    } else if (value.includes('.') && value.split('.')[1].length > 3) {
+        e.target.setCustomValidity('Максимальная точность - 3 знака после запятой');
+        showError('Максимальная точность - 3 знака после запятой');
+    } else {
+        e.target.setCustomValidity('');
+        hideError();
+    }
+});
 
 document.addEventListener('DOMContentLoaded', function() {
+    loadPointsFromStorage();
     drawGraph(currentR);
 
 
@@ -10,7 +87,7 @@ document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('x-value').value = '0';
 
     xButtons.forEach(button => {
-        button.addEventListener('click', function() {
+        button.addEventListener('click', function () {
             xButtons.forEach(btn => btn.classList.remove('selected'));
             this.classList.add('selected');
             document.getElementById('x-value').value = this.value;
@@ -44,12 +121,97 @@ document.addEventListener('DOMContentLoaded', function() {
         submitForm();
     });
 });
+document.getElementById('clear-history').addEventListener('click', function() {
+    clearHistory();
+});
 
-// Отправка формы
+
+//table
+function loadPointsFromStorage() {
+    const savedPoints = localStorage.getItem(STORAGE_KEY);
+    if (savedPoints) {
+        try {
+            points = JSON.parse(savedPoints);
+            updateResultsTable();
+            points.forEach(point => {
+                addPointToGraph(point.x, point.y, point.r, point.result);
+            });
+        } catch (e) {
+            console.error('Ошибка загрузки точек:', e);
+            points = [];
+        }
+    }
+}
+function savePointsToStorage() {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(points));
+}
+function clearHistory() {
+    if (confirm('Вы уверены, что хотите очистить историю?')) {
+        points = [];
+        localStorage.removeItem(STORAGE_KEY);
+        updateResultsTable();
+        drawGraph(currentR);
+    }
+}
+function updateResultsTable() {
+    const resultsTable = document.querySelector('#results-table tbody');
+    resultsTable.innerHTML = '';
+
+    if (points.length === 0) {
+        resultsTable.innerHTML = `
+            <tr>
+                <td colspan="6" style="text-align: center; padding: 20px;">
+                    пока ничего нет
+                </td>
+            </tr>
+        `;
+        return;
+    }
+
+    points.forEach(data => {
+        const newRow = document.createElement('tr');
+        newRow.innerHTML = `
+            <td>${data.x}</td>
+            <td>${data.y.toFixed(3)}</td>
+            <td>${data.r}</td>
+            <td>${data.result ? 'Попадание' : 'Промах'}</td>
+            <td>${data.currentTime}</td>
+            <td>${data.workTime}</td>
+        `;
+        resultsTable.appendChild(newRow);
+    });
+}
+
 function submitForm() {
     const xValue = parseFloat(document.getElementById('x-value').value);
-    const yValue = parseFloat(document.getElementById('y').value.replace(',', '.'));
 
+
+    const yInput = document.getElementById('y');
+    const value = yInput.value.replace(',', '.');
+
+
+    const numberValue = parseFloat(value);
+
+    if (isNaN(numberValue)) {
+        showError('Пожалуйста, введите число');
+        yInput.focus();
+        return;
+    }
+
+    if (numberValue < -3 || numberValue > 5) {
+        showError('Число должно быть от -3 до 5');
+        yInput.focus();
+        return;
+    }
+
+    if (value.includes('.') && value.split('.')[1].length > 3) {
+        showError('Максимальная точность - 3 знака после запятой');
+        yInput.focus();
+        return;
+    }
+
+    hideError();
+    const yValue = numberValue;
 
     const rCheckbox = document.querySelector('input[name="r"]:checked');
     if (!rCheckbox) {
@@ -58,10 +220,6 @@ function submitForm() {
     }
     const rValue = parseFloat(rCheckbox.value);
 
-    if (isNaN(yValue) || yValue <= -3 || yValue >= 5) {
-        alert("Пожалуйста, введите корректное значение Y в диапазоне (-3, 5)");
-        return;
-    }
 
     const formData = {
         x: xValue,
@@ -88,6 +246,8 @@ function submitForm() {
             } else {
                 points.push(data);
                 addResultToTable(data);
+                savePointsToStorage();
+                updateResultsTable();
                 addPointToGraph(data.x, data.y, data.r, data.result);
             }
         })
