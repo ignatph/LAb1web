@@ -70,7 +70,6 @@ public class AreaCheckServlet extends HttpServlet {
                 }
             } else {
                 req.setAttribute("result", entry);
-                req.getRequestDispatcher("/result.jsp").forward(req, resp);
             }
         } catch (ValidationException e) {
             sendError(resp, e.getMessage());
