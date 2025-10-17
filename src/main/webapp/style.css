@@ -1,0 +1,211 @@
+body {
+    font-family: Arial, sans-serif;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+    background-color: #f0f8ff;
+}
+table.layout {
+    width: 100%;
+    border-collapse: collapse;
+    background: #f5f5f5;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    border-radius: 10px;
+    overflow: hidden;
+}
+table.layout td {
+    padding: 20px;
+    vertical-align: top;
+}
+#main-header {
+    background: #808080;
+    color: white;
+    padding: 20px;
+    text-align: center;
+    border-radius: 10px 10px 0 0;
+    font-family: cursive;
+    color: #ffebcd;
+    font-size: 1.2em;
+}
+#main-header h1 {
+    margin: 0;
+    font-size: 28px;
+}
+#main-header p {
+    margin: 10px 0 0;
+    font-size: 16px;
+}
+.form-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+.form-table td {
+    padding: 12px;
+    border-bottom: 1px solid #ddd;
+}
+.form-group label {
+    font-weight: bold;
+    display: block;
+    margin-bottom: 8px;
+    color: #333;
+}
+.button-group {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 5px;
+}
+.button-group button {
+    padding: 8px 12px;
+    border: 1px solid #ccc;
+    background-color: #f8f8f8;
+    cursor: pointer;
+    border-radius: 4px;
+    transition: all 0.3s;
+}
+.button-group button.selected {
+    background-color: #666;
+    color: white;
+    border-color: #555;
+}
+.checkbox-group {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 5px;
+}
+.checkbox-group input[type="checkbox"] {
+    margin-right: 5px;
+}
+.checkbox-group label {
+    font-weight: normal;
+    display: inline-flex;
+    align-items: center;
+}
+input[type="text"] {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    box-sizing: border-box;
+    font-size: 16px;
+    margin: 5% 0;
+}
+input[type="text"]:focus {
+    border-color: #666;
+    outline: none;
+    box-shadow: 0 0 5px rgba(102, 102, 102, 0.5);
+}
+button[type="submit"]::after {
+    background: #666;
+    color: white;
+    padding: 12px 25px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    margin-top: 15px;
+    font-size: 16px;
+    font-weight: bold;
+    margin: 2% 2% 2% 0;
+}
+button[type="submit"]:hover::after {
+    background: #555;
+}
+#results-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 20px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.05);
+}
+#results-table th {
+    background: #808080;
+    color: white;
+    padding: 12px;
+    text-align: center;
+}
+#results-table td {
+    border: 1px solid #ddd;
+    padding: 12px;
+    text-align: center;
+}
+
+#results-table tr:hover {
+    background-color: #f0f0f0;
+}
+.graph-container {
+    text-align: center;
+    margin-top: 20px;
+    padding: 15px;
+    background: #f5f5f5;
+    border-radius: 10px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+}
+#coordinatePlane {
+    background-color: white;
+    border: 1px solid #2c3e50;
+    border-radius: 5px;
+}
+.error {
+    color: red;
+    font-weight: bold;
+    margin-top: 10px;
+}
+#clear-history {
+    background: #666;
+    color: white;
+    padding: 6px 13px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    margin-top: 15px;
+    font-size: 12px;
+    font-weight: bold;
+    margin: 2% 2% 2% 0;
+}
+
+#clear-history:hover {
+    background: #c82333;
+}
+
+.radio-group {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 5px;
+}
+
+.radio-group input[type="radio"] {
+    display: none;
+}
+
+.radio-group label {
+    padding: 8px 16px;
+    border: 2px solid #ccc;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.radio-group input[type="radio"]:checked + label {
+    background-color: #007bff;
+    color: white;
+    border-color: #007bff;
+}
+
+.error {
+    color: #dc3545;
+    font-size: 12px;
+    margin-top: 5px;
+}
+
+.error-border {
+    border-color: #dc3545 !important;
+}
+
+
+
+
+
+
+
+
