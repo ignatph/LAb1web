@@ -1,2 +1,2 @@
-rootProject.name = "LAb1web"
+rootProject.name = "LAb1try"
 
