@@ -27,7 +27,6 @@
   </thead>
   <tbody>
   <%
-    // Показываем только что добавленный результат (если есть)
     if (result != null) {
   %>
   <tr style="background-color: #e8f5e8; font-weight: bold;">
@@ -40,11 +39,9 @@
   </tr>
   <%
     }
-    
-    // Показываем все остальные результаты
+
     if (results != null && !results.isEmpty()) {
       for (ResultEntry re : results) {
-        // Пропускаем только что добавленный результат, чтобы избежать дублирования
         if (result == null || !re.equals(result)) {
   %>
   <tr>
@@ -59,8 +56,7 @@
         }
       }
     }
-    
-    // Если нет результатов вообще
+
     if ((results == null || results.isEmpty()) && result == null) {
   %>
   <tr>

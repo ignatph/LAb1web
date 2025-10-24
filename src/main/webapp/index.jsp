@@ -141,7 +141,6 @@
                     </tr>
                 <%
                     } else {
-                        // Показываем все результаты, кроме только что добавленного (чтобы избежать дублирования)
                         for (ResultEntry re : results) {
                             if (newResult == null || !re.equals(newResult)) {
                 %>
