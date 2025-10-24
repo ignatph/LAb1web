@@ -1,6 +1,7 @@
 <%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
 <%@ page import="java.util.List" %>
 <%@ page import="ru.rmntim.web.ResultEntry" %>
+<%@ page import="ru.rmntim.web.ApplicationStorage" %>
 <!doctype html>
 <html lang="ru">
 <head>
@@ -27,17 +28,21 @@
                                         <div class="form-group">
                                             <label>Выберите координату X:</label>
                                             <div class="radio-group" id="x-radio">
-                                                <input type="radio" name="x" value="-3" id="x_-3"><label for="x_-3">-3</label>
-                                                <input type="radio" name="x" value="-2" id="x_-2"><label for="x_-2">-2</label>
-                                                <input type="radio" name="x" value="-1" id="x_-1"><label for="x_-1">-1</label>
-                                                <input type="radio" name="x" value="0" id="x_0" checked><label for="x_0">0</label>
-                                                <input type="radio" name="x" value="1" id="x_1"><label for="x_1">1</label>
-                                                <input type="radio" name="x" value="2" id="x_2"><label for="x_2">2</label>
-                                                <input type="radio" name="x" value="3" id="x_3"><label for="x_3">3</label>
-                                                <input type="radio" name="x" value="4" id="x_4"><label for="x_4">4</label>
-                                                <input type="radio" name="x" value="5" id="x_5"><label for="x_5">5</label>
+                                                <%
+                                                    String selectedX = request.getParameter("x");
+                                                    if (selectedX == null) selectedX = "0";
+                                                %>
+                                                <input type="radio" name="x" value="-3" id="x_-3" <%= "-3".equals(selectedX) ? "checked" : "" %>><label for="x_-3">-3</label>
+                                                <input type="radio" name="x" value="-2" id="x_-2" <%= "-2".equals(selectedX) ? "checked" : "" %>><label for="x_-2">-2</label>
+                                                <input type="radio" name="x" value="-1" id="x_-1" <%= "-1".equals(selectedX) ? "checked" : "" %>><label for="x_-1">-1</label>
+                                                <input type="radio" name="x" value="0" id="x_0" <%= "0".equals(selectedX) ? "checked" : "" %>><label for="x_0">0</label>
+                                                <input type="radio" name="x" value="1" id="x_1" <%= "1".equals(selectedX) ? "checked" : "" %>><label for="x_1">1</label>
+                                                <input type="radio" name="x" value="2" id="x_2" <%= "2".equals(selectedX) ? "checked" : "" %>><label for="x_2">2</label>
+                                                <input type="radio" name="x" value="3" id="x_3" <%= "3".equals(selectedX) ? "checked" : "" %>><label for="x_3">3</label>
+                                                <input type="radio" name="x" value="4" id="x_4" <%= "4".equals(selectedX) ? "checked" : "" %>><label for="x_4">4</label>
+                                                <input type="radio" name="x" value="5" id="x_5" <%= "5".equals(selectedX) ? "checked" : "" %>><label for="x_5">5</label>
                                             </div>
-                                            <input type="hidden" name="x" id="x-value" required />
+                                            <input type="hidden" name="x" id="x-value" value="<%= selectedX %>" required />
                                         </div>
                                     </td>
                                 </tr>
@@ -49,6 +54,7 @@
                                                     type="text"
                                                     id="y"
                                                     name="y"
+                                                    value="<%= request.getParameter("y") != null ? request.getParameter("y") : "" %>"
                                                     placeholder="Число от -5 до 3"
                                                     pattern="-?[0-9]+([\.,][0-9]{0,3})?"
                                                     title="Введите число от -5 до 3 с точностью до 3 знаков после запятой"
@@ -66,6 +72,7 @@
                                                     type="text"
                                                     id="r"
                                                     name="r"
+                                                    value="<%= request.getParameter("r") != null ? request.getParameter("r") : "" %>"
                                                     placeholder="Число от 1 до 4"
                                                     pattern="[0-9]+([\.,][0-9]{0,3})?"
                                                     title="Введите число от 1 до 4 с точностью до 3 знаков после запятой"
@@ -79,6 +86,7 @@
                                     <td>
                                         <button type="submit" id="submit-btn">Проверить</button>
                                         <button type="button" id="clear-history">Очистить историю</button>
+                                        <a href="result.jsp" class="button-link">Показать результаты</a>
                                     </td>
                                 </tr>
                             </table>
@@ -106,7 +114,24 @@
                 </thead>
                 <tbody>
                 <%
-                    List<ResultEntry> results = (List<ResultEntry>) session.getAttribute("results");
+                    // Проверяем, есть ли результат в атрибутах запроса (только что добавленный)
+                    ResultEntry newResult = (ResultEntry) request.getAttribute("result");
+                    List<ResultEntry> results = ApplicationStorage.getResults(application);
+                    
+                    if (newResult != null) {
+                        // Показываем только что добавленный результат
+                %>
+                    <tr style="background-color: #e8f5e8;">
+                        <td><%= String.format(java.util.Locale.US, "%.3f", newResult.getX()) %></td>
+                        <td><%= String.format(java.util.Locale.US, "%.3f", newResult.getY()) %></td>
+                        <td><%= String.format(java.util.Locale.US, "%.3f", newResult.getR()) %></td>
+                        <td><%= newResult.isResult() ? "Попадание" : "Промах" %></td>
+                        <td><%= newResult.getCurrentTime() %></td>
+                        <td><%= newResult.getWorkTime() %></td>
+                    </tr>
+                <%
+                    }
+                    
                     if (results == null || results.isEmpty()) {
                 %>
                     <tr>
@@ -116,7 +141,9 @@
                     </tr>
                 <%
                     } else {
+                        // Показываем все результаты, кроме только что добавленного (чтобы избежать дублирования)
                         for (ResultEntry re : results) {
+                            if (newResult == null || !re.equals(newResult)) {
                 %>
                     <tr>
                         <td><%= String.format(java.util.Locale.US, "%.3f", re.getX()) %></td>
@@ -127,6 +154,7 @@
                         <td><%= re.getWorkTime() %></td>
                     </tr>
                 <%
+                            }
                         }
                     }
                 %>

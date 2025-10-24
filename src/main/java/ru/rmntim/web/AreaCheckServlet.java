@@ -9,15 +9,13 @@ import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import jakarta.servlet.http.HttpSession;
+import jakarta.servlet.ServletContext;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.HashMap;
@@ -56,7 +54,7 @@ public class AreaCheckServlet extends HttpServlet {
             String currentTime = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
 
             ResultEntry entry = new ResultEntry(x, y, r, isHit, currentTime, workTime);
-            storeInSession(req.getSession(), entry);
+            storeInApplication(req.getServletContext(), entry);
 
             String accept = req.getHeader("Accept");
             boolean wantsJson = accept != null && accept.toLowerCase().contains("application/json");
@@ -70,6 +68,8 @@ public class AreaCheckServlet extends HttpServlet {
                 }
             } else {
                 req.setAttribute("result", entry);
+                req.getRequestDispatcher("/result.jsp").forward(req, resp);
+                return;
             }
         } catch (ValidationException e) {
             sendError(resp, e.getMessage());
@@ -134,14 +134,8 @@ public class AreaCheckServlet extends HttpServlet {
         }
     }
 
-    private void storeInSession(HttpSession session, ResultEntry entry) {
-        @SuppressWarnings("unchecked")
-        List<ResultEntry> list = (List<ResultEntry>) session.getAttribute("results");
-        if (list == null) {
-            list = new ArrayList<>();
-        }
-        list.add(entry);
-        session.setAttribute("results", list);
+    private void storeInApplication(ServletContext context, ResultEntry entry) {
+        ApplicationStorage.addResult(context, entry);
     }
 
     private void sendError(HttpServletResponse resp, String message) throws IOException {

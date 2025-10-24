@@ -23,6 +23,24 @@ public class ResultEntry {
     public boolean isResult() { return result; }
     public String getCurrentTime() { return currentTime; }
     public long getWorkTime() { return workTime; }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) return true;
+        if (obj == null || getClass() != obj.getClass()) return false;
+        ResultEntry that = (ResultEntry) obj;
+        return Float.compare(that.x, x) == 0 &&
+               Float.compare(that.y, y) == 0 &&
+               Float.compare(that.r, r) == 0 &&
+               result == that.result &&
+               workTime == that.workTime &&
+               currentTime.equals(that.currentTime);
+    }
+
+    @Override
+    public int hashCode() {
+        return java.util.Objects.hash(x, y, r, result, currentTime, workTime);
+    }
 }
 
 

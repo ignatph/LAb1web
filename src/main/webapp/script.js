@@ -1,6 +1,5 @@
 let currentR = 2;
 let points = [];
-const STORAGE_KEY = 'savedPoints';
 
 // Валидация для Y (-5 до 3)
 document.getElementById('y').addEventListener('input', function(e) {
@@ -111,21 +110,36 @@ document.getElementById('r').addEventListener('blur', function(e) {
         e.target.setCustomValidity('');
         hideError('r');
         currentR = numberValue;
-        drawGraph(currentR);
+        drawGraphWithPoints(currentR);
     }
 });
 
 document.addEventListener('DOMContentLoaded', function() {
+    // Восстанавливаем кнопку отправки
+    const submitBtn = document.getElementById('submit-btn');
+    submitBtn.disabled = false;
+    submitBtn.textContent = 'Проверить';
+    
+    // Загружаем точки из application storage (переданные через JSP)
     if (window.initialPoints && Array.isArray(window.initialPoints)) {
         points = window.initialPoints.slice();
-    } else {
-        loadPointsFromStorage();
     }
-    drawGraph(currentR);
+    
+    // Получаем текущий R из формы или используем значение по умолчанию
+    const rInput = document.getElementById('r');
+    if (rInput.value) {
+        currentR = parseFloat(rInput.value.replace(',', '.'));
+    }
+    
+    drawGraphWithPoints(currentR);
 
     const xRadios = document.querySelectorAll('#x-radio input[type="radio"]');
-    xRadios[3].checked = true;
-    document.getElementById('x-value').value = '0';
+    // Не устанавливаем значение по умолчанию, если уже есть выбранное значение
+    const checkedRadio = document.querySelector('#x-radio input[type="radio"]:checked');
+    if (!checkedRadio) {
+        xRadios[3].checked = true;
+        document.getElementById('x-value').value = '0';
+    }
 
     xRadios.forEach(radio => {
         radio.addEventListener('change', function() {
@@ -133,6 +147,15 @@ document.addEventListener('DOMContentLoaded', function() {
                 document.getElementById('x-value').value = this.value;
             }
         });
+    });
+
+    // Обработчик изменения радиуса для перерисовки графика
+    rInput.addEventListener('input', function() {
+        const value = parseFloat(this.value.replace(',', '.'));
+        if (!isNaN(value) && value >= 1 && value <= 4) {
+            currentR = value;
+            drawGraphWithPoints(currentR);
+        }
     });
 
     document.getElementById('coordinatePlane').addEventListener('click', onCanvasClick);
@@ -221,6 +244,14 @@ function drawGraph(r) {
     ctx.fillText('Y', centerX + 10, 10);
 }
 
+function drawGraphWithPoints(r) {
+    drawGraph(r);
+    // Отрисовываем все точки из application storage
+    points.forEach(point => {
+        addPointToGraph(point.x, point.y, point.r, point.result);
+    });
+}
+
 function onCanvasClick(event) {
     const rInput = document.getElementById('r');
     const rValueStr = rInput.value.replace(',', '.');
@@ -245,85 +276,39 @@ function onCanvasClick(event) {
 
     const possibleX = [-3,-2,-1,0,1,2,3,4,5];
     const snappedX = possibleX.reduce((prev, curr) => Math.abs(curr - x) < Math.abs(prev - x) ? curr : prev);
-    const formData = { x: snappedX, y: parseFloat(y.toFixed(3)), r: rValue };
+    
+    // Устанавливаем значения в форму и отправляем обычным запросом (JSP-рендер)
+    const form = document.getElementById('input-form');
+    // Выставляем X через радио и скрытое поле
+    const xRadios = document.querySelectorAll('#x-radio input[type="radio"]');
+    xRadios.forEach(r => { r.checked = (parseFloat(r.value) === snappedX); });
+    document.getElementById('x-value').value = String(snappedX);
 
-    fetch(`controller?x=${encodeURIComponent(formData.x)}&y=${encodeURIComponent(formData.y)}&r=${encodeURIComponent(formData.r)}`, {
-        method: 'GET',
-        headers: { 'Accept': 'application/json' }
-    })
-        .then(r => r.json())
-        .then(data => {
-            if (!data.error) {
-                points.push(data);
-                savePointsToStorage();
-                updateResultsTable();
-                addPointToGraph(data.x, data.y, data.r, data.result);
-            } else {
-                alert('Ошибка: ' + data.error);
-            }
-        })
-        .catch(e => alert('Ошибка: ' + e));
+    // Устанавливаем Y из клика
+    document.getElementById('y').value = parseFloat(y.toFixed(3));
+
+    // R уже введён пользователем; используем текущее значение поля
+    form.submit();
 }
 
-function loadPointsFromStorage() {
-    const savedPoints = localStorage.getItem(STORAGE_KEY);
-    if (savedPoints) {
-        try {
-            points = JSON.parse(savedPoints);
-            updateResultsTable();
-            points.forEach(point => {
-                addPointToGraph(point.x, point.y, point.r, point.result);
-            });
-        } catch (e) {
-            console.error('Ошибка загрузки точек:', e);
-            points = [];
-        }
-    }
-}
-
-function savePointsToStorage() {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(points));
-}
+// Убрали localStorage - используем только application storage
 
 function clearHistory() {
     if (confirm('Вы уверены, что хотите очистить историю?')) {
-        points = [];
-        localStorage.removeItem(STORAGE_KEY);
-        updateResultsTable();
-        drawGraph(currentR);
+        // Простое перенаправление на GET запрос
+        window.location.href = 'clear-history';
     }
 }
 
-function updateResultsTable() {
-    const resultsTable = document.querySelector('#results-table tbody');
-    resultsTable.innerHTML = '';
-
-    if (points.length === 0) {
-        resultsTable.innerHTML = `
-            <tr>
-                <td colspan="6" style="text-align: center; padding: 20px;">
-                    пока ничего нет
-                </td>
-            </tr>
-        `;
-        return;
-    }
-
-    points.forEach(data => {
-        const newRow = document.createElement('tr');
-        newRow.innerHTML = `
-            <td>${data.x}</td>
-            <td>${data.y.toFixed(3)}</td>
-            <td>${data.r}</td>
-            <td>${data.result ? 'Попадание' : 'Промах'}</td>
-            <td>${data.currentTime}</td>
-            <td>${data.workTime}</td>
-        `;
-        resultsTable.appendChild(newRow);
-    });
-}
+// Убрали updateResultsTable - таблица обновляется через JSP
 
 function submitForm() {
+    // Защита от повторной отправки
+    const submitBtn = document.getElementById('submit-btn');
+    if (submitBtn.disabled) {
+        return;
+    }
+    
     const xRadio = document.querySelector('input[name="x"]:checked');
     if (!xRadio) {
         alert('Пожалуйста, выберите значение X');
@@ -378,66 +363,18 @@ function submitForm() {
     hideError('y');
     hideError('r');
 
-    const formData = {
-        x: xValue,
-        y: yValue,
-        r: rValue
-    };
+    // Блокируем кнопку от повторной отправки
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Отправка...';
 
-    fetch(`controller?x=${encodeURIComponent(formData.x)}&y=${encodeURIComponent(formData.y)}&r=${encodeURIComponent(formData.r)}`, {
-        method: 'GET',
-        headers: {
-            'Accept': 'application/json'
-        }
-    })
-        .then(response => {
-            if (!response.ok) {
-                throw new Error('Ошибка сети: ' + response.status);
-            }
-            return response.json();
-        })
-        .then(data => {
-            if (data.error) {
-                alert("Ошибка: " + data.error);
-            } else {
-                points.push(data);
-                addResultToTable(data);
-                savePointsToStorage();
-                updateResultsTable();
-                addPointToGraph(data.x, data.y, data.r, data.result);
-            }
-        })
-        .catch(error => {
-            console.error('Ошибка:', error);
-            alert("Произошла ошибка при отправке данных. Проверьте консоль для подробностей.");
-        });
+    // Всё валидно — отправляем обычным запросом на контроллер (JSP-ответ)
+    const form = document.getElementById('input-form');
+    form.submit();
 }
 
-function addResultToTable(data) {
-    const resultsTable = document.querySelector('#results-table tbody');
-
-    if (resultsTable.querySelector('td[colspan]')) {
-        resultsTable.innerHTML = '';
-    }
-
-    const newRow = document.createElement('tr');
-    newRow.innerHTML = `
-        <td>${data.x}</td>
-        <td>${data.y.toFixed(3)}</td>
-        <td>${data.r}</td>
-        <td>${data.result ? 'Попадание' : 'Промах'}</td>
-        <td>${data.currentTime}</td>
-        <td>${data.workTime}</td>
-    `;
-
-    resultsTable.appendChild(newRow);
-}
+// Убрали addResultToTable - таблица обновляется через JSP
 
 function addPointToGraph(x, y, r, isHit) {
-    if (Math.abs(r - currentR) > 0.001) {
-        return;
-    }
-
     const canvas = document.getElementById('coordinatePlane');
     const ctx = canvas.getContext('2d');
 
@@ -445,8 +382,12 @@ function addPointToGraph(x, y, r, isHit) {
     const centerX = canvas.width / 2;
     const centerY = canvas.height / 2;
 
-    const pixelX = centerX + x * scale;
-    const pixelY = centerY - y * scale;
+    // Масштабируем координаты относительно текущего радиуса
+    const scaledX = (x / r) * currentR;
+    const scaledY = (y / r) * currentR;
+
+    const pixelX = centerX + scaledX * scale;
+    const pixelY = centerY - scaledY * scale;
 
     ctx.beginPath();
     ctx.arc(pixelX, pixelY, 5, 0, 2 * Math.PI);
@@ -462,7 +403,4 @@ document.getElementById('clear-history').addEventListener('click', function() {
     clearHistory();
 });
 
-document.getElementById('input-form').addEventListener('submit', function(e) {
-    e.preventDefault();
-    submitForm();
-});
+// Разрешаем нативную отправку формы; если нужно, можно навесить submitForm на кнопку
